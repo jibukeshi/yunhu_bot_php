@@ -39,7 +39,7 @@ $content_types = array(
 
 // 获取原始 post 请求体
 $raw_data = file_get_contents("php://input");
-if ($raw_data == null ) {
+if ($raw_data == null) {
     echo "这个 php 不是让你在浏览器里面打开的啊";
     exit;
 }
@@ -90,7 +90,7 @@ elseif ($content_type == "unknown") {
     }
     elseif (is_string($message["content"]["audioUrl"])) {
         // 如果是音频消息
-        $content = "https://chat-audio1.jwznb.com/" . $message["content"]["audioUrl"]; // 获取视频 URL，但是会 403，我也没办法了
+        $content = "https://chat-audio1.jwznb.com/" . $message["content"]["audioUrl"]; // 获取音频 URL，但是会 403，我也没办法了
     }
     // 如果这些都不是我也帮不上了
 }
@@ -139,7 +139,7 @@ elseif ($event_type == "bot.setting") {
 
 // 请求 API 封装
 function send_request($tool, $send_data) {
-    global $bot_token, $debug_mode; // 获取全局变量中的 Token 和调试模式开关
+    global $bot_token, $debug_mode, $log_file; // 获取全局变量中的 Token、调试模式开关和日志文件名
     $send_body = json_encode($send_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); // 保留原始的 Unicode 字符和斜杠不转义
     $send_header = array("Content-Type: application/json; charset=utf-8"); // 请求头
     $send_url = "https://chat-go.jwzhd.com/open-apis/v1/bot/{$tool}?token={$bot_token}";
@@ -152,7 +152,7 @@ function send_request($tool, $send_data) {
     $back_data = curl_exec($send);
     // 调试模式，把每个 API 的请求体和响应体都写入日志
     if ($debug_mode) {
-        write_log("log.txt", "请求 URL：{$send_url} | 请求体：{$send_body} | 响应体：{$back_data}\n");
+        write_log($log_file, "请求 URL：{$send_url} | 请求体：{$send_body} | 响应体：{$back_data}\n");
     }
     curl_close($send);
     return $back_data;
@@ -247,7 +247,7 @@ function recall($msg_id, $chat_id, $chat_type) {
 
 // 消息列表封装
 // 这个还是 GET 请求，5 个参数分别是 获取消息对象 ID、消息 ID、指定消息 ID 前 N 条、指定消息 ID 后 N 条
-function messages($chat_id, $chat_type, $message_id = null, $before = null , $after = null) {
+function messages($chat_id, $chat_type, $message_id = null, $before = null, $after = null) {
     global $bot_token; // 获取全局变量中的 Token
     $send_header = array("Content-Type: application/json; charset=utf-8"); // 请求头
     $send_url = "https://chat-go.jwzhd.com/open-apis/v1/bot/messages?token={$bot_token}&chat-id={$chat_id}&chat-type={$chat_type}&message-id={$message_id}&before={$before}&after={$after}";
@@ -322,5 +322,5 @@ if ($debug_mode) {
         $part1 = "{$group_name}：{$group_id} | {$chat_types[$chat_type]}：{$chat_id}";
     }
     $part2 = "{$event_types[$event_type]} | " . $part1 . " | 原始请求体：{$raw_data}\n";
-    write_log("log.txt", $part2);
+    write_log($log_file, $part2);
 }

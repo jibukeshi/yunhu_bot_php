@@ -23,8 +23,9 @@ https://yhfx.jwznb.com/share?key=V4TOmiidzNxg&ts=1719712633
 主文件的开头请这样编写
 
 ```
-$bot_token = "xxx"; // 机器人的Token
+$bot_token = "xxx"; // 机器人的 Token
 $debug_mode = true; // 调试模式，可根据实际需求打开或关闭
+$log_file = "log.txt"; // 日志文件名，如有多个机器人建议每个机器人设置不同的日志文件
 require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 ```
 
@@ -54,6 +55,12 @@ require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 
 [事件订阅（机器人收消息）](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/receive.md)
 
+## 更新日志
+
+### 2024-07-24
+
+支持自定义日志文件名（注意需要定义 `$log_file` 变量）
+
 ## 使用了 SDK 的机器人
 
-待添加
+- 轻智小助手云湖版（ID：43272366）
