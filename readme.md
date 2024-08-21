@@ -63,4 +63,6 @@ require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 
 ## 使用了 SDK 的机器人
 
-- 轻智小助手云湖版（ID：43272366）
+- [轻智小助手云湖版（ID：43272366）](https://yhfx.jwznb.com/share?key=X7ihZbOM9YcK&ts=1712137543)
+
+- [全员群（ID：95179851）](https://github.com/jibukeshi/yunhu_bot_php/blob/main/big/readme.md)
