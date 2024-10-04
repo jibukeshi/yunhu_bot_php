@@ -30,17 +30,29 @@ $content_types = array(
     "markdown" => "Markdown消息",
     "file" => "文件消息",
     // 下面这些官网的文档里没写，是自己发现的
+    "video" => "视频消息",
+    "audio" => "语音消息",
     "html" => "html消息",
     "expression" => "表情消息",
     "post" => "帖子消息",
-    "form" => "表单消息", //自定义指令的表单消息
-    "unknown" => "未知消息" //可能是语音或视频消息
+    "form" => "表单消息", // 自定义指令的表单消息
+    "audioCall" => "语音通话消息",
+    "videoCall" => "视频通话消息",
+    "unknown" => "未知消息" // 可能是版本过低消息
 );
+
+// 检查是否为域名，用于检测反代链接
+function is_domain($input) {
+    // 这里只能用正则表达式，filter_var('input', FILTER_VALIDATE_DOMAIN,FILTER_FLAG_HOSTNAME) 不管用
+    $pattern = '/^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+(?:[A-Z|a-z]{2,})$/';
+    return preg_match($pattern, $input);
+}
+
 
 // 获取原始 post 请求体
 $raw_data = file_get_contents("php://input");
 if ($raw_data == null) {
-    echo "这个 php 不是让你在浏览器里面打开的啊";
+    echo "请勿直接在浏览器中打开此 php 文件，请将 PHP 主文件（注意不是 SDK 文件）的 URL 填入机器人控制台的“配置消息订阅接口”中。";
     exit;
 }
 $json_data = json_decode($raw_data, true);
@@ -68,31 +80,110 @@ if (in_array($content_type, ["text", "markdown", "html", "post"])) {
 }
 elseif ($content_type == "image") {
     // 如果是图片消息
-    $content = $message["content"]["imageUrl"]; // 获取图片 URL
+    if($img_mode == "0") {
+        // 模式0：直接获取 content 的 array
+        $content = $message["content"];
+    }
+    elseif($img_mode == "2") {
+        // 模式2：获取 imageName，自行拼接使用
+        $content = $message["content"]["imageName"];
+    }
+    elseif($img_mode == "3") {
+        // 模式3：获取官方提供的 imageUrl，带 sign 参数、有有效期
+        $content = $message["content"]["imageUrl"];
+    }
+    elseif(is_domain($img_mode)) {
+        // 使用自己的反代链接
+        $content = "https://chat-img.{$img_mode}/" . $message["content"]["imageName"];
+    }
+    else {
+        // 模式1：获取 chat-img.jwznb.com 的图片链接，永久有效
+        $content = "https://chat-img.jwznb.com/" . $message["content"]["imageName"];
+    }
 }
 elseif ($content_type == "file") {
     // 如果是文件消息
-    $content = "https://chat-file.jwznb.com/" . $message["content"]["fileUrl"]; // 获取文件 URL，但是会 403，我也没办法了
+    if($file_mode == "0") {
+        // 模式0：直接获取 content 的 array
+        $content = $message["content"];
+    }
+    elseif($file_mode == "2") {
+        // 模式2：获取 fileUrl，自行拼接使用
+        $content = $message["content"]["fileUrl"];
+    }
+    elseif(is_domain($file_mode)) {
+        // 使用自己的反代链接
+        $content = "https://chat-file.{$file_mode}/" . $message["content"]["fileUrl"];
+    }
+    else {
+        // 模式1：获取 chat-file.jwznb.com 的文件链接，注意需要添加 Referer 为 http://myapp.jwznb.com/，否则会 403
+        $content = "https://chat-file.jwznb.com/" . $message["content"]["fileUrl"];
+    }
+}
+elseif ($content_type == "video") {
+    // 如果是视频消息
+        if($file_mode == "0") {
+        // 模式0：直接获取 content 的 array
+        $content = $message["content"];
+    }
+    elseif($file_mode == "2") {
+        // 模式2：获取 videoUrl，自行拼接使用
+        $content = $message["content"]["videoUrl"];
+    }
+    elseif(is_domain($file_mode)) {
+        // 使用自己的反代链接
+        $content = "https://chat-video1.{$file_mode}/" . $message["content"]["videoUrl"];
+    }
+    else {
+        // 模式1：获取 chat-video1.jwznb.com 的视频链接，注意需要添加 Referer 为 http://myapp.jwznb.com/，否则会 403
+        $content = "https://chat-video1.jwznb.com/" . $message["content"]["videoUrl"];
+    }
+}
+elseif ($content_type == "audio") {
+    // 如果是音频消息
+        if($file_mode == "0") {
+        // 模式0：直接获取 content 的 array
+        $content = $message["content"];
+    }
+    elseif($file_mode == "2") {
+        // 模式2：获取 audioUrl，自行拼接使用
+        $content = $message["content"]["audioUrl"];
+    }
+    elseif(is_domain($file_mode)) {
+        // 使用自己的反代链接
+        $content = "https://chat-audio1.{$file_mode}/" . $message["content"]["audioUrl"];
+    }
+    else {
+        // 模式1：获取 chat-audio1.jwznb.com 的音频链接，注意需要添加 Referer 为 http://myapp.jwznb.com/，否则会 403
+        $content = "https://chat-audio1.jwznb.com/" . $message["content"]["audioUrl"];
+    }
 }
 elseif ($content_type == "expression") {
     // 如果是表情消息
-    $content = "https://chat-img.jwznb.com/" . $message["content"]["imageName"]; // 获取表情 URL，推送的链接不全，必须手动补全域名
+    if($expression_mode == "0") {
+        // 模式0：直接获取 content 的 array
+        $content = $message["content"];
+    }
+    elseif($expression_mode == "2") {
+        // 模式2：获取 imageName，自行拼接使用
+        $content = $message["content"]["imageName"];
+    }
+    elseif(is_domain($expression_mode)) {
+        // 使用自己的反代链接
+        $content = "https://chat-img.{$expression_mode}/" . $message["content"]["imageName"];
+    }
+    else {
+        // 模式1：获取 chat-img.jwznb.com 的图片链接，永久有效
+        $content = "https://chat-img.jwznb.com/" . $message["content"]["imageName"];
+    }
 }
 elseif ($content_type == "form") {
     // 如果是自定义指令的表单消息
     $content = $message["content"]["formJson"]; // 只能帮你到这一步了，后面自己获取吧，注意这里获取到的是 Array
 }
-elseif ($content_type == "unknown") {
-    // 注意视频消息和音频消息都会显示为 unknown，这里要根据有没有 videoUrl 或者 audioUrl 做区分
-    if (is_string($message["content"]["videoUrl"])) {
-        // 如果是视频消息
-        $content = "https://chat-video1.jwznb.com/" . $message["content"]["videoUrl"]; // 获取视频 URL，但是会 403，我也没办法了
-    }
-    elseif (is_string($message["content"]["audioUrl"])) {
-        // 如果是音频消息
-        $content = "https://chat-audio1.jwznb.com/" . $message["content"]["audioUrl"]; // 获取音频 URL，但是会 403，我也没办法了
-    }
+else {
     // 如果这些都不是我也帮不上了
+    $content = $message["content"]["text"];
 }
 $command = $message["commandName"]; // 命令名称
 
@@ -137,6 +228,7 @@ elseif ($event_type == "bot.setting") {
     $setting_json = $json_data["event"]["settingJson"]; // 获取设置 JSON
 }
 
+
 // 请求 API 封装
 function send_request($tool, $send_data) {
     global $bot_token, $debug_mode, $log_file; // 获取全局变量中的 Token、调试模式开关和日志文件名
@@ -152,7 +244,7 @@ function send_request($tool, $send_data) {
     $back_data = curl_exec($send);
     // 调试模式，把每个 API 的请求体和响应体都写入日志
     if ($debug_mode) {
-        write_log($log_file, "请求 URL：{$send_url} | 请求体：{$send_body} | 响应体：{$back_data}\n");
+        file_put_contents($log_file, date("Y-m-d H:i:s") . " | 请求 URL：" . str_replace($bot_token, "BotToken", $send_url) . " | 请求体：{$send_body} | 响应体：{$back_data}" . PHP_EOL, FILE_APPEND);
     }
     curl_close($send);
     return $back_data;
@@ -300,20 +392,14 @@ function unset_board_all() {
     return $back_data;
 }
 
-// 写入日志封装
-function write_log($file, $log) {
-    date_default_timezone_set("Asia/Shanghai"); // 设置时区
-    $time = date("Y-m-d H:i:s"); // 获取时间
-    file_put_contents($file, $time . " | " . $log, FILE_APPEND);
-}
 
 // 调试模式，把每个消息订阅的请求都写入日志
 if ($debug_mode) {
     if ($event_type == "message.receive.normal") {
-        $part1 = "{$chat_types[$chat_type]}：{$chat_id} | [{$sender_levels[$sender_user_level]}]{$sender_nickname}({$sender_id})：{$content}";
+        $part1 = "{$content_types[$content_type]} | {$chat_types[$chat_type]}：{$chat_id} | [{$sender_levels[$sender_user_level]}]{$sender_nickname}({$sender_id})：" . str_replace("\n", '\n', $content);
     }
     elseif ($event_type == "message.receive.instruction") {
-        $part1 = "{$chat_types[$chat_type]}：{$chat_id} | 指令名称：{$command} | [{$sender_levels[$sender_user_level]}]{$sender_nickname}({$sender_id})：{$content}";
+        $part1 = "{$content_types[$content_type]} | {$chat_types[$chat_type]}：{$chat_id} | 指令名称：{$command} | [{$sender_levels[$sender_user_level]}]{$sender_nickname}({$sender_id})：" . str_replace("\n", '\n', $content);
     }
     elseif (in_array($event_type, ["bot.followed", "bot.unfollowed", "group.join", "group.leave"])) {
         $part1 = "{$chat_types[$chat_type]}：{$chat_id} | {$nickname}({$user_id})";
@@ -321,6 +407,6 @@ if ($debug_mode) {
     elseif ($event_type == "bot.setting") {
         $part1 = "{$group_name}：{$group_id} | {$chat_types[$chat_type]}：{$chat_id}";
     }
-    $part2 = "{$event_types[$event_type]} | " . $part1 . " | 原始请求体：{$raw_data}\n";
-    write_log($log_file, $part2);
+    $part2 = date("Y-m-d H:i:s") . " | {$event_types[$event_type]} | " . $part1 . " | 原始请求体：{$raw_data}";
+    file_put_contents($log_file, $part2 . PHP_EOL, FILE_APPEND);
 }

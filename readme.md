@@ -57,9 +57,17 @@ require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 
 ## 更新日志
 
+### 2024-10-04
+
+- 新的图片、文件等获取方式（详情请见[图片、文件获取方法详解](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/file.md)）
+
+- 优化调试模式写入日志封装
+
+- 支持日志文件机器人 Token 脱敏
+
 ### 2024-07-24
 
-支持自定义日志文件名（注意需要定义 `$log_file` 变量）
+- 支持自定义日志文件名（注意需要定义 `$log_file` 变量）
 
 ## 使用了 SDK 的机器人
 
