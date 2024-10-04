@@ -82,7 +82,7 @@
 | chatId | `$message["chatId"]` | string | 当前聊天的对象 ID<br>单聊消息，chatId 即对方用户 ID<br>群聊消息，chatId 即群 ID<br>机器人消息，chatId 即机器人 ID |
 | chatType | `$message["parentId"]` | string | 当前聊天的对象类型<br>group 群聊<br>bot 机器人 |
 | contentType | `$id` | string | 当前消息类型 |
-| content | `$content` | 自动匹配 | 消息正文，不同的消息类型返回值不一样，自行翻源码 |
+| content | `$content` | 自动匹配 | 消息正文，不同的消息类型返回值不一样，文本、Markdown、html 消息为文本内容，其他消息详见[图片、文件获取方法详解](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/file.md) |
 | commandId | `$message["commandId"]` | int | 指令 ID，可用来区分用户发送的指令 |
 | commandName | `$command` | string | 指令名称，可用来区分用户发送的指令 |
 
