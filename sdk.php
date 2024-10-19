@@ -47,6 +47,12 @@ function is_domain($input) {
     $pattern = '/^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+(?:[A-Z|a-z]{2,})$/';
     return preg_match($pattern, $input);
 }
+// 检查是否为 URL，用于检测发送图片时使用 imageUrl 还是 imageKey
+function is_url($input) {
+    // 这里只能用正则表达式，filter_var('input', FILTER_VALIDATE_URL) 不支持含中文的 URL
+    $pattern = '/\b(?:(?:https?|ftp):\/\/|www\.)((?:[a-zA-Z0-9\-\.]+)\.[a-zA-Z]{2,}|(?:[\x{4e00}-\x{9fa5}]+))(:\d{1,5})?(\/[^\s]*)?/u';
+    return preg_match($pattern, $input);
+}
 
 
 // 获取原始 post 请求体
@@ -71,6 +77,7 @@ $chat_type = $chat["chatType"]; // 聊天对象类型
 // 消息信息
 $message = $json_data["event"]["message"];
 $id = $message["msgId"]; // 消息 ID，全局唯一
+$parent_id = $message["parentId"]; // 引用消息时的父消息,ID
 $send_time = $message["sendTime"]; // 消息发送时间，毫秒 13 位时间戳
 $content_type = $message["contentType"]; // 获取消息类型
 // 获取消息内容
@@ -251,8 +258,8 @@ function send_request($tool, $send_data) {
 }
 
 // 发送消息封装（支持批量发送消息）
-// 5 个参数分别是 接收消息对象 ID、接收对象类型、消息类型、消息对象、按钮
-function send($recv_id, $recv_type, $content_type, $content, $buttons = null) {
+// 5 个参数分别是 接收消息对象 ID、接收对象类型、消息类型、消息对象、按钮、引用消息 ID
+function send($recv_id, $recv_type, $content_type, $content, $buttons = null, $parent_id = null) {
     $send_data = array(); // 初始化请求体
     // 判断是不是批量发送
     if (is_array($recv_id)) {
@@ -266,6 +273,7 @@ function send($recv_id, $recv_type, $content_type, $content, $buttons = null) {
     }
     $send_data["recvType"] = $recv_type; // 设置接收对象类型
     $send_data["contentType"] = $content_type; // 设置消息类型
+    $send_data["parentId"] = $parent_id; // 设置引用消息 ID
     $send_data["content"] = array(); // 初始化消息对象
     // 设置消息对象
     if (in_array($content_type, ["text", "markdown", "html"])) {
@@ -274,7 +282,14 @@ function send($recv_id, $recv_type, $content_type, $content, $buttons = null) {
     }
     elseif ($content_type == "image") {
         // 如果是图片消息
-        $send_data["content"]["imageUrl"] = $content; // 设置图片 URL
+        if (is_url($content)) {
+            // 如果传入的是图片 URL
+            $send_data["content"]["imageUrl"] = $content; // 设置图片 URL
+        }
+        else {
+            // 如果传入的不是 URL，那就当做使用图片上传接口获得的 Key
+            $send_data["content"]["imageKey"] = $content; // 设置图片 Key
+        }
     }
     elseif ($content_type == "file") {
         // 如果是文件消息
@@ -340,7 +355,7 @@ function recall($msg_id, $chat_id, $chat_type) {
 // 消息列表封装
 // 这个还是 GET 请求，5 个参数分别是 获取消息对象 ID、消息 ID、指定消息 ID 前 N 条、指定消息 ID 后 N 条
 function messages($chat_id, $chat_type, $message_id = null, $before = null, $after = null) {
-    global $bot_token; // 获取全局变量中的 Token
+    global $bot_token, $debug_mode, $log_file; // 获取全局变量中的 Token、调试模式开关和日志文件名
     $send_header = array("Content-Type: application/json; charset=utf-8"); // 请求头
     $send_url = "https://chat-go.jwzhd.com/open-apis/v1/bot/messages?token={$bot_token}&chat-id={$chat_id}&chat-type={$chat_type}&message-id={$message_id}&before={$before}&after={$after}";
     $send = curl_init();
@@ -350,6 +365,36 @@ function messages($chat_id, $chat_type, $message_id = null, $before = null, $aft
     curl_setopt($send, CURLOPT_HTTPHEADER, $send_header); // 设置请求头
     $back_data = curl_exec($send);
     curl_close($send);
+    // 调试模式，把每个 API 的请求体和响应体都写入日志
+    if ($debug_mode) {
+        file_put_contents($log_file, date("Y-m-d H:i:s") . " | 请求 URL：" . str_replace($bot_token, "BotToken", $send_url) . " | 响应体：{$back_data}" . PHP_EOL, FILE_APPEND);
+    }
+    return $back_data;
+}
+
+// 上传图片封装
+// 一个参数，为本地图片路径
+function upload_image($image) {
+    global $bot_token, $debug_mode, $log_file; // 获取全局变量中的 Token、调试模式开关和日志文件名
+    // 检查图片是否存在
+    if (!file_exists($image)) {
+        exit("图片不存在，请检查本地图片路径 {$image} 是否正确。");
+    }
+    $send_body = [
+        "image" => new CURLFile($image)
+    ];
+    $send_url = "https://chat-go.jwzhd.com/open-apis/v1/image/upload?token={$bot_token}";
+    $send = curl_init();
+    curl_setopt($send, CURLOPT_URL, $send_url); // 设置 URL
+    curl_setopt($send, CURLOPT_POST, true);
+    curl_setopt($send, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($send, CURLOPT_POSTFIELDS, $send_body); // 设置请求体
+    $back_data = curl_exec($send);
+    curl_close($send);
+    // 调试模式，把每个 API 的请求体和响应体都写入日志
+    if ($debug_mode) {
+        file_put_contents($log_file, date("Y-m-d H:i:s") . " | 请求 URL：" . str_replace($bot_token, "BotToken", $send_url) . " | 请求体：{$send_body} | 响应体：{$back_data}" . PHP_EOL, FILE_APPEND);
+    }
     return $back_data;
 }
 

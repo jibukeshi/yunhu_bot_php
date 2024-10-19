@@ -41,6 +41,8 @@ require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 
 [消息列表](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/messages.md)
 
+[上传图片](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/upload_image.md)
+
 ### 看板管理
 
 [设置用户看板](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/set_board.md)
@@ -59,18 +61,26 @@ require __DIR__ . "/sdk.php"; // 引入 SDK，勿删
 
 ### 2024-10-04
 
+- 新增上传图片功能
+- 发送消息时支持引用
+- 获取消息列表支持写入日志
+
+### 2024-10-04
+
 - 新的图片、文件等获取方式（详情请见[图片、文件获取方法详解](https://github.com/jibukeshi/yunhu_bot_php/blob/main/docs/file.md)）
-
 - 优化调试模式写入日志封装
-
 - 支持日志文件机器人 Token 脱敏
 
 ### 2024-07-24
 
 - 支持自定义日志文件名（注意需要定义 `$log_file` 变量）
 
+## 关联项目
+
+- [Toserk1024/yhbot-php-sdk](https://github.com/Toserk1024/yhbot-php-sdk) 另一个使用 PHP 编写的 SDK，本项目参考了其的框架
+- [jibukeshi/yunhu_cdn_worker](https://github.com/jibukeshi/yunhu_cdn_worker) 本项目中可能会用到的云湖 CDN 资源反代
+
 ## 使用了 SDK 的机器人
 
 - [轻智小助手云湖版（ID：43272366）](https://yhfx.jwznb.com/share?key=X7ihZbOM9YcK&ts=1712137543)
-
 - [全员群（ID：95179851）](https://github.com/jibukeshi/yunhu_bot_php/blob/main/big/readme.md)
