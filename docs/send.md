@@ -4,7 +4,7 @@
 
 ## 请求函数
 
-`send($recv_id, $recv_type, $content_type, $content, $buttons = null);`
+`send($recv_id, $recv_type, $content_type, $content, $buttons = null, $parent_id = null);`
 
 ## 请求参数
 
@@ -15,6 +15,7 @@
 | $content_type | string | 是 |
 | $content | 自动匹配，参考下面 | 是 |
 | $buttons | array | 否 |
+| $parent_id | string | 否 |
 
 ### $recv_id 参数
 
@@ -74,6 +75,10 @@
 | actionType | int | 是 | 1: 跳转URL<br>2: 复制<br>3: 点击汇报 |
 | url | string | 否 | 当actionType为1时使用 |
 | value | string | 否 | 当actionType为2时，该值会复制到剪贴板<br>当actionType为3时，该值会发送给订阅端 |
+
+### $parent_id 参数
+
+引用消息 ID
 
 ## 响应内容
 
